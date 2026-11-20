@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NoteCard from "./NoteCard.jsx";
 
-function Notes() {
-  const [notes, setNotes] = useState([
+const startingNotes = [
     {
       id: 1,
       title: "Review map and filter",
@@ -13,14 +12,24 @@ function Notes() {
       title: "Prepare for the quiz",
       body: "Practice writing one handler for many inputs.",
     },
-  ]);
+]
+
+function Notes() {
+  const [notes, setNotes] = useState(() => {
+    const saved = localStorage.getItem('notes')
+    return saved ? JSON.parse(saved) : startingNotes
+  }  
+);
 
   const [form, setForm] = useState({ title: "", body: "" });
-  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
 
+  useEffect(() => {
+    localStorage.setItem("notes", JSON.stringify(notes));
+  }, [notes]);
   
   const displayedNotes = notes.filter((note) =>
-    note.title.toLowerCase().includes(query.toLowerCase().trim())
+    note.title.toLowerCase().includes(search.toLowerCase().trim())
   );
 
   function handleChange(e) {
@@ -68,8 +77,8 @@ function Notes() {
           </p>
 
           <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by title"
             className="h-[52px] w-full border border-[#e6e6e6] px-4 text-lg outline-none placeholder:text-black/40 placeholder:italic focus:border-[#cf7d7d]"
           />
