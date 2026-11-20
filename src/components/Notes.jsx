@@ -21,7 +21,11 @@ function Notes() {
   }  
 );
 
-  const [form, setForm] = useState({ title: "", body: "" });
+  const [form, setForm] = useState(() => {
+  const savedDraft = localStorage.getItem("draft");
+  return savedDraft ? JSON.parse(savedDraft) : { title: "", body: "" };
+});
+
   const [search, setSearch] = useState("");
   const titleRef = useRef(null)
 
