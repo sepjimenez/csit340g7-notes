@@ -23,7 +23,7 @@ function Notes() {
 
   const [form, setForm] = useState({ title: "", body: "" });
   const [search, setSearch] = useState("");
-  titleRef = useRef(null)
+  const titleRef = useRef(null)
 
   useEffect(() => {
     localStorage.setItem("notes", JSON.stringify(notes));
