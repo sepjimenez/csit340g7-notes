@@ -1,78 +1,90 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import NoteCard from "./NoteCard.jsx";
 
-const API_URL = import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Notes() {
-  const [notes, setNotes] = useState([])
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState(() => {
-    const saved = localStorage.getItem('draft')
+    const saved = localStorage.getItem("draft");
 
-    return saved
-      ? JSON.parse(saved)
-      : { title: "", body: "" }
-  })
+    return saved ? JSON.parse(saved) : { title: "", body: "" };
+  });
 
-  const [search, setSearch] = useState("")
-  const titleRef = useRef(null)
+  const [search, setSearch] = useState("");
+  const titleRef = useRef(null);
 
   useEffect(() => {
+    let ignore = false;
     async function loadNotes() {
-      const res = await fetch(API_URL + '/notes')
-      const data = await res.json()
-      setNotes(data)
+      try {
+        const res = await fetch(API_URL + "/notes");
+        if (!res.ok) {
+          throw new Error("The server answered " + res.status);
+        }
+        const data = await res.json();
+        if (!ignore) setNotes(data);
+      } catch (err) {
+        if (!ignore) setError(err.message);
+      }
+      if (!ignore) setLoading(false);
     }
 
-    loadNotes()
-  }, [])
+    loadNotes();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     const id = setTimeout(() => {
-      localStorage.setItem('draft', JSON.stringify(form))
-    }, 1000)
+      localStorage.setItem("draft", JSON.stringify(form));
+    }, 1000);
 
-    return () => clearTimeout(id)
-  }, [form])
+    return () => clearTimeout(id);
+  }, [form]);
 
   const visibleNotes = useMemo(() => {
     return notes.filter((note) =>
-      note.title.toLowerCase().includes(search.toLowerCase())
-    )
-  }, [notes, search])
+      note.title.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [notes, search]);
 
   function handleChange(e) {
-    const { name, value } = e.target
+    const { name, value } = e.target;
 
     setForm((prevForm) => ({
       ...prevForm,
       [name]: value,
-    }))
+    }));
   }
 
   function handleSubmit(e) {
-    e.preventDefault()
+    e.preventDefault();
 
-    const title = form.title.trim()
-    const body = form.body.trim()
+    const title = form.title.trim();
+    const body = form.body.trim();
 
-    if (!title || !body) return
+    if (!title || !body) return;
 
     const newNote = {
       id: crypto.randomUUID(),
       title,
       body,
-    }
+    };
 
-    setNotes((prevNotes) => [...prevNotes, newNote])
+    setNotes((prevNotes) => [...prevNotes, newNote]);
 
-    setForm({ title: "", body: "" })
-    titleRef.current.focus()
+    setForm({ title: "", body: "" });
+    titleRef.current.focus();
   }
 
   const handleDelete = useCallback((id) => {
-    setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id))
-  }, [])
+    setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id));
+  }, []);
 
   return (
     <div className="grid min-h-screen grid-cols-[420px_1fr]">
@@ -144,12 +156,14 @@ function Notes() {
           ))}
         </ul>
 
-        {visibleNotes.length === 0 && (
+        {loading && <p className="text-lg text-[#949494]">Loading notes...</p>}
+        {error && <p className="text-lg text-[#b83f45]">{error}</p>}
+        {!loading && !error && visibleNotes.length === 0 && (
           <p className="text-lg text-[#949494]">No notes found</p>
         )}
       </section>
     </div>
-  )
+  );
 }
 
-export default Notes
+export default Notes;
