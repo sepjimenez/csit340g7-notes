@@ -1,83 +1,78 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import NoteCard from "./NoteCard.jsx";
 
-const startingNotes = [
-    {
-      id: 1,
-      title: "Review map and filter",
-      body: "Redo the TodoMVC steps without looking at the guide.",
-    },
-    {
-      id: 2,
-      title: "Prepare for the quiz",
-      body: "Practice writing one handler for many inputs.",
-    },
-]
+const API_URL = import.meta.env.VITE_API_URL
 
 function Notes() {
-  const [notes, setNotes] = useState(() => {
-    const saved = localStorage.getItem('notes')
-    return saved ? JSON.parse(saved) : startingNotes
-  }  
-);
+  const [notes, setNotes] = useState([])
 
   const [form, setForm] = useState(() => {
-  const savedDraft = localStorage.getItem("draft");
-  return savedDraft ? JSON.parse(savedDraft) : { title: "", body: "" };
-});
+    const saved = localStorage.getItem('draft')
 
-  const [search, setSearch] = useState("");
+    return saved
+      ? JSON.parse(saved)
+      : { title: "", body: "" }
+  })
+
+  const [search, setSearch] = useState("")
   const titleRef = useRef(null)
 
   useEffect(() => {
-    localStorage.setItem("notes", JSON.stringify(notes));
-  }, [notes]);
+    async function loadNotes() {
+      const res = await fetch(API_URL + '/notes')
+      const data = await res.json()
+      setNotes(data)
+    }
+
+    loadNotes()
+  }, [])
 
   useEffect(() => {
     const id = setTimeout(() => {
       localStorage.setItem('draft', JSON.stringify(form))
     }, 1000)
+
     return () => clearTimeout(id)
   }, [form])
-  
+
   const visibleNotes = useMemo(() => {
     return notes.filter((note) =>
       note.title.toLowerCase().includes(search.toLowerCase())
     )
-  }, [notes, search])  
+  }, [notes, search])
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name, value } = e.target
 
     setForm((prevForm) => ({
       ...prevForm,
       [name]: value,
-    }));
+    }))
   }
 
   function handleSubmit(e) {
-    e.preventDefault();
+    e.preventDefault()
 
-    const title = form.title.trim();
-    const body = form.body.trim();
+    const title = form.title.trim()
+    const body = form.body.trim()
 
-    if (!title || !body) return;
+    if (!title || !body) return
 
     const newNote = {
       id: crypto.randomUUID(),
       title,
       body,
-    };
+    }
 
-    setNotes((prevNotes) => [...prevNotes, newNote]);
+    setNotes((prevNotes) => [...prevNotes, newNote])
 
-    setForm({ title: "", body: "" });
+    setForm({ title: "", body: "" })
     titleRef.current.focus()
   }
 
   const handleDelete = useCallback((id) => {
-     setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id));
-  }, [notes])
+    setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id))
+  }, [])
 
   return (
     <div className="grid min-h-screen grid-cols-[420px_1fr]">
@@ -154,7 +149,7 @@ function Notes() {
         )}
       </section>
     </div>
-  );
+  )
 }
 
 export default Notes
